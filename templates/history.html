@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial - VideoTR</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .header-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
+            margin-bottom: 2rem;
+        }
+
+        .table {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+        }
+
+        .btn-action {
+            border-radius: 20px;
+            padding: 0.375rem 1rem;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            color: white;
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--success-color), #34d399);
+            border: none;
+            color: white;
+        }
+
+        .btn-back {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            border: none;
+            color: white;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="card header-card">
+            <div class="card-body text-center">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-history text-primary me-3"></i>
+                    Historial de Transcripciones
+                </h1>
+                <p class="text-muted">Gestiona y descarga tus transcripciones anteriores</p>
+            </div>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="card">
+            <div class="card-body">
+                {% if transcriptions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th><i class="fas fa-file-text me-2"></i>Archivo</th>
+                                    <th><i class="fas fa-weight me-2"></i>Tamaño</th>
+                                    <th><i class="fas fa-calendar-plus me-2"></i>Creado</th>
+                                    <th><i class="fas fa-calendar-edit me-2"></i>Modificado</th>
+                                    <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transcription in transcriptions %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file-text text-primary me-2"></i>
+                                        <strong>{{ transcription.filename }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ transcription.size }} KB</span>
+                                    </td>
+                                    <td>{{ transcription.created }}</td>
+                                    <td>{{ transcription.modified }}</td>
+                                    <td>
+                                        <a href="/view/{{ transcription.filename }}" class="btn btn-sm btn-view btn-action">
+                                            <i class="fas fa-eye me-1"></i>Ver
+                                        </a>
+                                        <a href="/download/{{ transcription.filename }}" class="btn btn-sm btn-download btn-action">
+                                            <i class="fas fa-download me-1"></i>Descargar
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h4>No hay transcripciones aún</h4>
+                        <p class="text-muted">Las transcripciones que realices aparecerán aquí</p>
+                        <a href="/" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus me-2"></i>Crear Primera Transcripción
+                        </a>
+                    </div>
+                {% endif %}
+
+                <div class="text-center mt-4">
+                    <a href="/" class="btn btn-back">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

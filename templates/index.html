@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoTR - Transcriptor de Videos</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .header-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
+            margin-bottom: 2rem;
+        }
+
+        .upload-area {
+            border: 3px dashed #d1d5db;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(249, 250, 251, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(103, 126, 234, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            transform: scale(1.1);
+            color: var(--secondary-color);
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(103, 126, 234, 0.4);
+        }
+
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(103, 126, 234, 0.6);
+            color: white;
+        }
+
+        .btn-history {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-history:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(75, 85, 99, 0.4);
+            color: white;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 2rem;
+        }
+
+        .progress {
+            height: 20px;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.1);
+            border: 2px solid rgba(255,255,255,0.8);
+            overflow: visible;
+            position: relative;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7);
+            border-radius: 13px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .phase-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding: 0 1rem;
+        }
+
+        .phase-step {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            transition: all 0.3s ease;
+        }
+
+        .phase-step.active {
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        .phase-step.completed {
+            color: var(--success-color);
+        }
+
+        .phase-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .phase-step.active .phase-dot {
+            background: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(103, 126, 234, 0.3);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        .phase-step.completed .phase-dot {
+            background: var(--success-color);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+        }
+
+        .phase-step.completed .phase-dot::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .progress-percentage {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .eta-display {
+            background: rgba(103, 126, 234, 0.1);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            color: var(--primary-color);
+            border: 1px solid rgba(103, 126, 234, 0.2);
+        }
+
+        .model-selector {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .model-selector:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(103, 126, 234, 0.1);
+        }
+
+        .status-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 100%);
+            border-left: 5px solid var(--primary-color);
+            margin-top: 1rem;
+        }
+
+        .floating-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .result-preview {
+            background: rgba(248, 250, 252, 0.9);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .btn-outline-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #6c757d;
+            color: #6c757d;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #6c757d;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Estilos para notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            min-width: 300px;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .notification-info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-left: 12px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .notification-close:hover {
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-particles" id="particles"></div>
+    
+    <div class="container main-container">
+        <!-- Header -->
+        <div class="card header-card">
+            <div class="card-body text-center">
+                <h1 class="display-4 fw-bold mb-3">
+                    <i class="fas fa-video text-primary me-3"></i>
+                    VideoTR
+                </h1>
+                <p class="lead text-muted">Convierte tus videos a texto con inteligencia artificial</p>
+                <p class="text-muted">Sube tu video y obtén una transcripción precisa usando OpenAI Whisper</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Panel de subida -->
+            <div class="col-lg-8 mx-auto">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <!-- Área de subida -->
+                            <div class="upload-area" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                <h4 class="mb-3">Arrastra tu video aquí</h4>
+                                <p class="text-muted mb-3">o haz clic para seleccionar archivo</p>
+                                <input type="file" id="videoFile" name="file" accept=".mp4,.avi,.mov,.mkv,.webm,.m4v" style="display: none;">
+                                <button type="button" class="btn btn-upload" onclick="document.getElementById('videoFile').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Seleccionar Video
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Formatos soportados: MP4, AVI, MOV, MKV, WEBM, M4V (máx. 500MB)
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Configuración -->
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <label for="model" class="form-label fw-bold">
+                                        <i class="fas fa-brain me-2"></i>Modelo de IA
+                                    </label>
+                                    <select class="form-select model-selector" id="model" name="model">
+                                        <option value="base">Base (Rápido, buena calidad)</option>
+                                        <option value="small">Small (Equilibrado)</option>
+                                        <option value="medium">Medium (Mayor precisión)</option>
+                                        <option value="large">Large (Máxima calidad)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-upload w-100" id="transcribeBtn" disabled>
+                                        <i class="fas fa-magic me-2"></i>Transcribir Video
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Progreso -->
+                        <div class="progress-container" id="progressContainer">
+                            <div class="status-card card">
+                                <div class="card-body">
+                                    <!-- Indicadores de fase -->
+                                    <div class="phase-indicator" id="phaseIndicator">
+                                        <div class="phase-step" data-phase="init">
+                                            <div class="phase-dot"></div>
+                                            <span>Inicio</span>
+                                        </div>
+                                        <div class="phase-step" data-phase="extraction">
+                                            <div class="phase-dot"></div>
+                                            <span>Audio</span>
+                                        </div>
+                                        <div class="phase-step" data-phase="transcribing">
+                                            <div class="phase-dot"></div>
+                                            <span>IA</span>
+                                        </div>
+                                        <div class="phase-step" data-phase="completed">
+                                            <div class="phase-dot"></div>
+                                            <span>Listo</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Porcentaje y estado -->
+                                    <div class="progress-percentage" id="progressPercent">0%</div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="fw-bold" id="statusText">Iniciando...</span>
+                                        <div class="eta-display" id="etaDisplay" style="display: none;">
+                                            <i class="fas fa-clock me-1"></i>
+                                            <span id="etaText">Calculando...</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Barra de progreso mejorada -->
+                                    <div class="progress">
+                                        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                                    </div>
+
+                                    <!-- Estadísticas del progreso -->
+                                    <div class="progress-stats">
+                                        <div>
+                                            <i class="fas fa-play-circle me-1"></i>
+                                            <span id="elapsedTime">0s</span>
+                                        </div>
+                                        <div id="fileInfo"></div>
+                                        <div>
+                                            <i class="fas fa-tachometer-alt me-1"></i>
+                                            <span id="processingSpeed">-</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="result-preview" id="resultPreview" style="display: none;">
+                                        <h6><i class="fas fa-file-text me-2"></i>Resultado:</h6>
+                                        <div class="row mb-3">
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Palabras:</small>
+                                                <strong id="wordCount">-</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Caracteres:</small>
+                                                <strong id="charCount">-</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <small class="text-muted">Tiempo:</small>
+                                                <strong id="finalTime">-</strong>
+                                            </div>
+                                        </div>
+                                        <p id="textPreview" class="mb-0"></p>
+                                        <div class="mt-3">
+                                            <button class="btn btn-success me-2" id="downloadBtn" title="Guardar archivo en ubicación personalizada">
+                                                <i class="fas fa-download me-2"></i>Guardar Como...
+                                            </button>
+                                            <button class="btn btn-outline-secondary me-2" id="newTranscriptionBtn">
+                                                <i class="fas fa-plus me-2"></i>Nueva Transcripción
+                                            </button>
+                                            <button class="btn btn-primary" id="viewBtn">
+                                                <i class="fas fa-eye me-2"></i>Ver Completa
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de historial -->
+                <div class="text-center mt-4">
+                    <a href="/history" class="btn btn-history">
+                        <i class="fas fa-history me-2"></i>Ver Historial de Transcripciones
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Crear partículas flotantes
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.width = Math.random() * 10 + 5 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        createParticles();
+
+        // Variables globales
+        let currentTaskId = null;
+        let progressInterval = null;
+
+        // Referencias a elementos
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('videoFile');
+        const uploadForm = document.getElementById('uploadForm');
+        const transcribeBtn = document.getElementById('transcribeBtn');
+        const progressContainer = document.getElementById('progressContainer');
+
+        // Drag & Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight() {
+            uploadArea.classList.add('dragover');
+        }
+
+        function unhighlight() {
+            uploadArea.classList.remove('dragover');
+        }
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            handleFileSelect();
+        }
+
+        // Selección de archivo
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                transcribeBtn.disabled = false;
+                uploadArea.querySelector('h4').textContent = file.name;
+                uploadArea.querySelector('p').textContent = `Archivo seleccionado (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+            }
+        }
+
+        // Envío del formulario
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(uploadForm);
+            
+            try {
+                transcribeBtn.disabled = true;
+                progressContainer.style.display = 'block';
+                
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentTaskId = result.task_id;
+                    startProgressTracking();
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+                transcribeBtn.disabled = false;
+                progressContainer.style.display = 'none';
+            }
+        });
+
+        // Seguimiento del progreso
+        let startTime = null;
+        let timerInterval = null;
+        
+        function startProgressTracking() {
+            startTime = Date.now();
+            progressInterval = setInterval(checkProgress, 800);
+            startTimer();
+        }
+
+        function startTimer() {
+            // Limpiar timer anterior si existe
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            timerInterval = setInterval(() => {
+                if (startTime) {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    document.getElementById('elapsedTime').textContent = elapsed + 's';
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        async function checkProgress() {
+            try {
+                const response = await fetch(`/progress/${currentTaskId}`);
+                const progress = await response.json();
+                
+                updateProgressUI(progress);
+                updatePhaseIndicators(progress.current_phase);
+                
+                if (progress.status === 'completed' || progress.status === 'error') {
+                    clearInterval(progressInterval);
+                    stopTimer(); // Detener el cronómetro
+                    if (progress.status === 'completed') {
+                        showResult(progress);
+                    } else {
+                        showError(progress);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error checking progress:', error);
+            }
+        }
+
+        function updateProgressUI(progress) {
+            const progressBar = document.getElementById('progressBar');
+            const progressPercent = document.getElementById('progressPercent');
+            const statusText = document.getElementById('statusText');
+            const etaDisplay = document.getElementById('etaDisplay');
+            
+            // Actualizar porcentaje con animación suave
+            progressBar.style.width = progress.progress + '%';
+            progressPercent.textContent = progress.progress + '%';
+            statusText.textContent = progress.step || 'Procesando...';
+            
+            // Cambiar color de la barra según el progreso
+            if (progress.progress < 30) {
+                progressBar.style.background = 'linear-gradient(90deg, #3b82f6, #60a5fa)';
+            } else if (progress.progress < 70) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+            } else if (progress.progress < 100) {
+                progressBar.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #059669, #10b981)';
+            }
+            
+            // Mostrar información del archivo
+            if (progress.filename) {
+                document.getElementById('fileInfo').innerHTML = `
+                    <i class="fas fa-file-video me-1"></i>
+                    ${progress.filename} (${progress.file_size} MB)
+                `;
+            }
+            
+            // Calcular y mostrar ETA
+            if (progress.progress > 5 && progress.progress < 95) {
+                const elapsed = (Date.now() - startTime) / 1000;
+                const eta = Math.round((elapsed / progress.progress) * (100 - progress.progress));
+                document.getElementById('etaText').textContent = `~${eta}s restantes`;
+                etaDisplay.style.display = 'block';
+            } else {
+                etaDisplay.style.display = 'none';
+            }
+            
+            // Actualizar velocidad de procesamiento
+            if (progress.progress > 0) {
+                const elapsed = (Date.now() - startTime) / 1000;
+                const speed = (progress.progress / elapsed).toFixed(1);
+                document.getElementById('processingSpeed').textContent = speed + '%/s';
+            }
+        }
+
+        function updatePhaseIndicators(currentPhase) {
+            const phases = ['init', 'extraction', 'transcribing', 'completed'];
+            const phaseElements = document.querySelectorAll('.phase-step');
+            
+            phaseElements.forEach((element, index) => {
+                const phaseData = element.getAttribute('data-phase');
+                element.classList.remove('active', 'completed');
+                
+                if (phaseData === currentPhase) {
+                    element.classList.add('active');
+                } else if (phases.indexOf(phaseData) < phases.indexOf(currentPhase)) {
+                    element.classList.add('completed');
+                }
+            });
+        }
+
+        async function downloadWithFileSelector(filename) {
+            try {
+                // Detectar entorno y capacidades
+                const userAgent = navigator.userAgent;
+                const isVSCodeBrowser = userAgent.includes('VSCode') || userAgent.includes('Electron');
+                const hasAPI = 'showSaveFilePicker' in window && !isVSCodeBrowser;
+                
+                // Obtener contenido del archivo
+                const response = await fetch(`/download/${filename}`);
+                if (!response.ok) {
+                    throw new Error('Error al obtener el archivo');
+                }
+                
+                const blob = await response.blob();
+                const content = await blob.text();
+                
+                // Crear nombre sugerido más limpio
+                const baseName = filename.replace(/^\d{8}_\d{6}_/, '').replace('.txt', '');
+                const suggestedName = `transcripcion_${baseName}.txt`;
+                
+                // Intentar usar File System Access API (Chrome/Edge moderno, NO VS Code)
+                if (hasAPI && !isVSCodeBrowser) {
+                    try {
+                        const fileHandle = await window.showSaveFilePicker({
+                            suggestedName: suggestedName,
+                            types: [{
+                                description: 'Archivos de texto',
+                                accept: {
+                                    'text/plain': ['.txt'],
+                                },
+                            }],
+                        });
+                        
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(new Blob([content], { type: 'text/plain;charset=utf-8' }));
+                        await writable.close();
+                        
+                        showNotification('✅ Archivo guardado exitosamente', 'success');
+                        return;
+                    } catch (err) {
+                        if (err.name === 'AbortError') {
+                            showNotification('Descarga cancelada', 'info');
+                            return;
+                        }
+                    }
+                }
+                
+                // Descarga directa (fallback universal)
+                const link = document.createElement('a');
+                const contentBlob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                link.href = URL.createObjectURL(contentBlob);
+                link.download = suggestedName;
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                
+                // Mostrar notificación apropiada
+                if (isVSCodeBrowser) {
+                    showNotification('✅ Archivo descargado', 'success');
+                } else {
+                    showNotification('📥 Descargando archivo...', 'info');
+                }
+                
+                // Limpiar
+                setTimeout(() => {
+                    if (document.body.contains(link)) {
+                        document.body.removeChild(link);
+                    }
+                    URL.revokeObjectURL(link.href);
+                }, 100);
+                
+            } catch (error) {
+                showNotification('❌ Error al descargar el archivo', 'error');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Crear notificación toast
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span>${message}</span>
+                    <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        function showResult(progress) {
+            const resultPreview = document.getElementById('resultPreview');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const viewBtn = document.getElementById('viewBtn');
+            const newTranscriptionBtn = document.getElementById('newTranscriptionBtn');
+            
+            // Ocultar el cronómetro en tiempo real y mostrar el tiempo final
+            const elapsedTimeContainer = document.querySelector('.progress-stats');
+            if (elapsedTimeContainer) {
+                elapsedTimeContainer.style.display = 'none';
+            }
+            
+            // Mostrar estadísticas finales
+            document.getElementById('wordCount').textContent = progress.word_count || 0;
+            document.getElementById('charCount').textContent = progress.char_count || 0;
+            document.getElementById('finalTime').textContent = progress.processing_time + 's';
+            
+            // Mostrar vista previa del texto
+            document.getElementById('textPreview').textContent = progress.text_preview || 'Sin contenido';
+            
+            // Configurar botones
+            downloadBtn.onclick = async () => {
+                await downloadWithFileSelector(progress.result_file);
+            };
+            viewBtn.onclick = () => window.location.href = `/view/${progress.result_file}`;
+            newTranscriptionBtn.onclick = () => resetForm();
+            
+            // Mostrar resultado con animación
+            resultPreview.style.display = 'block';
+            resultPreview.classList.add('animate-slide-up');
+            
+            // Completar todas las fases
+            updatePhaseIndicators('completed');
+            
+            // NO resetear automáticamente para permitir descargas
+            // El usuario puede hacer clic en "Nueva Transcripción" si desea
+        }
+
+        function showError(progress) {
+            const statusText = document.getElementById('statusText');
+            const progressBar = document.getElementById('progressBar');
+            
+            statusText.innerHTML = `<i class="fas fa-exclamation-triangle text-danger me-2"></i>${progress.step}`;
+            progressBar.style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+            progressBar.style.width = '100%';
+            
+            setTimeout(resetForm, 3000);
+        }
+
+        function resetForm() {
+            // Detener cronómetro y progreso
+            stopTimer();
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+            
+            transcribeBtn.disabled = false;
+            uploadForm.reset();
+            progressContainer.style.display = 'none';
+            uploadArea.querySelector('h4').textContent = 'Arrastra tu video aquí';
+            uploadArea.querySelector('p').textContent = 'o haz clic para seleccionar archivo';
+            transcribeBtn.disabled = true;
+            
+            // Restaurar visibilidad del cronómetro
+            const elapsedTimeContainer = document.querySelector('.progress-stats');
+            if (elapsedTimeContainer) {
+                elapsedTimeContainer.style.display = 'flex';
+            }
+            
+            // Ocultar resultado
+            const resultPreview = document.getElementById('resultPreview');
+            if (resultPreview) {
+                resultPreview.style.display = 'none';
+            }
+            
+            // Limpiar indicadores de fase
+            document.querySelectorAll('.phase-step').forEach(el => {
+                el.classList.remove('active', 'completed');
+            });
+            
+            // Limpiar variables de estado
+            startTime = null;
+            currentTaskId = null;
+        }
+    </script>
+</body>
+</html>

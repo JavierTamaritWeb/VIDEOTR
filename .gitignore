@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+.installed.cfg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Flask
+instance/
+.webassets-cache
+
+# VideoTR Specific
+uploads/*.mp4
+uploads/*.avi
+uploads/*.mov
+uploads/*.mkv
+uploads/*.wmv
+uploads/*.MP4
+uploads/*.AVI
+uploads/*.MOV
+uploads/*.MKV
+uploads/*.WMV
+transcriptions/*.txt
+
+# Temporary files
+*.tmp
+*.temp
+*.wav
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+uploads/*.mp4
+uploads/*.MP4
+uploads/*.avi
+uploads/*.mov
+uploads/*.mkv
+uploads/*.wmv
+
+# Keep example transcriptions but ignore temporary files
+transcriptions/temp_*
