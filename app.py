@@ -7,6 +7,7 @@ usando OpenAI Whisper.
 """
 
 import os
+import secrets
 import uuid
 import threading
 import time
@@ -28,13 +29,23 @@ except ImportError:
 warnings.filterwarnings("ignore", category=UserWarning)
 
 app = Flask(__name__)
-app.secret_key = 'videotranscribe-secret-key-2025'
+# Clave de sesión: nunca en el código (el repo es público). Se toma del entorno
+# o se genera una aleatoria en cada arranque (solo firma los mensajes flash).
+app.secret_key = os.environ.get('VIDEOTR_SECRET_KEY') or secrets.token_hex(32)
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size
 
 # Configuración de carpetas
 UPLOAD_FOLDER = Path(__file__).parent / 'uploads'
 TRANSCRIPTIONS_FOLDER = Path(__file__).parent / 'transcriptions'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm', 'm4v'}
+
+def safe_transcription_path(filename):
+    """Ruta de una transcripción solo si es un .txt dentro de TRANSCRIPTIONS_FOLDER."""
+    base = TRANSCRIPTIONS_FOLDER.resolve()
+    file_path = (base / filename).resolve()
+    if file_path.parent != base or file_path.suffix != '.txt':
+        return None
+    return file_path
 
 # Almacenamiento en memoria para el progreso de transcripciones
 transcription_progress = {}
@@ -253,8 +264,8 @@ def get_progress(task_id):
 @app.route('/download/<filename>')
 def download_file(filename):
     """Descarga un archivo de transcripción."""
-    file_path = TRANSCRIPTIONS_FOLDER / filename
-    if file_path.exists():
+    file_path = safe_transcription_path(filename)
+    if file_path and file_path.exists():
         # Verificar si es una solicitud AJAX (para File System Access API)
         if request.headers.get('Accept') == 'application/json' or 'fetch' in request.headers.get('User-Agent', '').lower():
             # Devolver el contenido directamente para procesamiento en JavaScript
@@ -265,7 +276,6 @@ def download_file(filename):
                 status=200,
                 mimetype='text/plain; charset=utf-8'
             )
-            response.headers['Access-Control-Allow-Origin'] = '*'
             return response
         else:
             # Descarga tradicional
@@ -303,8 +313,8 @@ def history():
 @app.route('/view/<filename>')
 def view_transcription(filename):
     """Visualiza una transcripción específica."""
-    file_path = TRANSCRIPTIONS_FOLDER / filename
-    if file_path.exists():
+    file_path = safe_transcription_path(filename)
+    if file_path and file_path.exists():
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -325,4 +335,6 @@ if __name__ == '__main__':
     print("📱 Accede a: http://localhost:8000")
     print("🛑 Presiona Ctrl+C para detener")
     
-    app.run(debug=False, host='0.0.0.0', port=8000)
+    # Solo en este equipo: la app no tiene login. Para abrirla a la red local
+    # (bajo tu responsabilidad) exporta VIDEOTR_HOST=0.0.0.0.
+    app.run(debug=False, host=os.environ.get('VIDEOTR_HOST', '127.0.0.1'), port=8000)

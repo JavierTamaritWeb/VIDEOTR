@@ -96,6 +96,10 @@ Una aplicación web elegante e intuitiva para transcribir videos usando intelige
 
 3. **Subir un video** y esperar la transcripción
 
+> **Seguridad:** la app no tiene login, así que por defecto solo escucha en este equipo
+> (`127.0.0.1`). Para abrirla a la red local: `VIDEOTR_HOST=0.0.0.0 python app.py`.
+> La clave de sesión se genera al arrancar; para fijarla usa `VIDEOTR_SECRET_KEY`.
+
 ### 📱 Crear la Aplicación .app
 
 ```bash

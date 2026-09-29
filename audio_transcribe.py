@@ -332,7 +332,7 @@ def main():
         
         # Preguntar si quiere abrir el archivo
         if input("\n📖 ¿Abrir el archivo? (s/N): ").lower().startswith('s'):
-            os.system(f'open "{output_path}"')
+            subprocess.run(['open', str(output_path)], check=False)
     else:
         print("\n❌ Error en la transcripción")
 
